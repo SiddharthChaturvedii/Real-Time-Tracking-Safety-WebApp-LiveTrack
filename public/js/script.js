@@ -1,14 +1,18 @@
-const socket = io();
+const socket = io("http://localhost:3000");
 
 // username PER TAB ONLY
 let username = sessionStorage.getItem("username") || "Guest";
+
+// store party info
+let partyCode = null;
+let partyUsers = [];
+
 
 function saveName() {
   username = document.getElementById("username").value || "Guest";
   sessionStorage.setItem("username", username);
   socket.emit("register-user", username);
 
-  // update your own tooltip immediately if marker exists
   if (markers[socket.id]) {
     markers[socket.id].bindTooltip(`You (${username})`);
   }
@@ -18,7 +22,9 @@ function saveName() {
 socket.emit("register-user", username);
 
 
+// ===================
 // MAP
+// ===================
 const map = L.map("map", { attributionControl: false }).setView([20, 0], 3);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -26,7 +32,9 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 
-// COLORS — FIXED PER USER FOREVER
+// ===================
+// ICON COLORS — FIXED
+// ===================
 const iconColors = ["red", "blue", "green", "gold", "violet", "orange"];
 
 function getColorFromId(id) {
@@ -51,7 +59,10 @@ const markers = {};
 let firstUpdate = true;
 
 
-// SEND YOUR LOCATION CONTINUOUSLY
+
+// ===================
+// SEND GPS CONTINUOUSLY
+// ===================
 if (navigator.geolocation) {
   navigator.geolocation.watchPosition((pos) => {
     socket.emit("send-location", {
@@ -62,7 +73,61 @@ if (navigator.geolocation) {
 }
 
 
-// RECEIVE ALL LOCATIONS
+
+// ===================
+// PARTY FUNCTIONS
+// ===================
+
+window.createParty = () => {
+  socket.emit("createParty", username);
+};
+
+window.joinParty = () => {
+  const code = prompt("Enter party code");
+  if (!code) return;
+  socket.emit("joinParty", { partyCode: code.trim(), username });
+};
+
+
+
+// ===================
+// PARTY EVENTS
+// ===================
+
+// When you CREATE a party
+socket.on("partyCreated", (data) => {
+  partyCode = data.partyCode;
+  partyUsers = data.users;
+
+  alert(`🎉 Party Created!\nShare this code:\n\n${partyCode}`);
+  console.log("Party users:", partyUsers);
+});
+
+
+// When you JOIN a party
+socket.on("partyJoined", (data) => {
+  partyCode = data.partyCode;
+  partyUsers = data.users;
+
+  alert(`🎉 Joined Party\nCode: ${partyCode}`);
+  console.log("Party users:", partyUsers);
+});
+
+
+// Errors
+socket.on("partyError", (msg) => alert(msg));
+
+
+// Someone else joined your party
+socket.on("userJoined", (user) => {
+  partyUsers.push(user);
+  console.log("User joined:", user);
+});
+
+
+// ===================
+// RECEIVE LOCATIONS — PARTY ONLY
+// ===================
 socket.on("receive-location", (data) => {
   const { id, username, latitude, longitude } = data;
 
@@ -76,7 +141,8 @@ socket.on("receive-location", (data) => {
     markers[id].bindTooltip(
       id === socket.id ? `You (${username})` : username
     );
-  } else {
+  } 
+  else {
     markers[id].setLatLng([latitude, longitude]);
   }
 
@@ -87,10 +153,15 @@ socket.on("receive-location", (data) => {
 });
 
 
-// REMOVE MARKER ON DISCONNECT
+
+// ===================
+// HANDLE DISCONNECT
+// ===================
 socket.on("user-disconnected", (id) => {
   if (markers[id]) {
     map.removeLayer(markers[id]);
     delete markers[id];
   }
+
+  partyUsers = partyUsers.filter(u => u.id !== id);
 });

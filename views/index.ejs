@@ -11,16 +11,24 @@
 
 <body>
 
-<div class="username-box">
-  <input id="username" placeholder="Enter your name" />
-  <button onclick="saveName()">Join</button>
-</div>
+  <div class="username-box">
+    <input id="username" placeholder="Enter your name" />
+    <button onclick="saveName()">Save</button>
 
-<div id="map"></div>
+    <button onclick="createParty()">Create Party</button>
+    <button onclick="joinParty()">Join Party</button>
+  </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-<script src="/js/script.js"></script>
+  <div id="partyBox">
+      <b>Status:</b> <span id="status">Not in party</span><br>
+      <b>Party Code:</b> <span id="code">—</span>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/script.js"></script>
 
 </body>
 </html>
