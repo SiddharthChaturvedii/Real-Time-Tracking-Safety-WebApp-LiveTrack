@@ -165,3 +165,23 @@ socket.on("user-disconnected", (id) => {
 
   partyUsers = partyUsers.filter(u => u.id !== id);
 });
+
+socket.on("partyCreated", (data) => {
+  partyCode = data.partyCode;
+  partyUsers = data.users;
+
+  document.getElementById("status").innerText = "Hosting Party";
+  document.getElementById("code").innerText = partyCode;
+
+  alert(`🎉 Party Created!\nShare this code:\n\n${partyCode}`);
+});
+
+socket.on("partyJoined", (data) => {
+  partyCode = data.partyCode;
+  partyUsers = data.users;
+
+  document.getElementById("status").innerText = "In Party";
+  document.getElementById("code").innerText = partyCode;
+
+  alert(`🎉 Joined Party\nCode: ${partyCode}`);
+});
