@@ -1,49 +1,84 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import gsap from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
+import MiniMapDemo from "./components/MiniMapDemo";
 
-const APP_URL = "http://localhost:3000"; // TODO: change to your deployed tracker URL later
+
+gsap.registerPlugin(ScrollTrigger);
+
+const MAP_APP_URL = "http://localhost:3000";
 
 export default function Home() {
 
-  const [name, setName] = useState("");
-
-  const openApp = () => {
-
-    const final = name.trim() || "Guest";
-
-    // store username for your realtime tracker
-    sessionStorage.setItem("username", final);
-    localStorage.setItem("username", final);
-
-    window.location.href = APP_URL;
-  };
+  useEffect(() => {
+    gsap.utils.toArray(".reveal").forEach((el: any) => {
+      gsap.fromTo(
+        el,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          scrollTrigger: { trigger: el, start: "top 80%" }
+        }
+      );
+    });
+  }, []);
 
   return (
-    <main className="bg-[#050B18] text-white min-h-screen overflow-x-hidden">
+      <main className="text-white min-h-screen">
 
-      {/* HERO SECTION */}
-      <section className="min-h-screen flex flex-col items-center justify-center text-center px-6">
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1 }}
-          className="bg-[#0b132b] p-6 rounded-2xl mb-6"
-        >
-          📡
-        </motion.div>
+      {/* Floating Gradient Lights */}
+      {/* Animated Gradient Blobs */}
+<div className="fixed inset-0 -z-10">
+  <svg
+    className="w-full h-full blur-3xl opacity-50"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#00fff2" />
+        <stop offset="50%" stopColor="#ff00ff" />
+        <stop offset="100%" stopColor="#00b3ff" />
+      </linearGradient>
+    </defs>
 
+    <motion.circle
+      cx="30%"
+      cy="30%"
+      r="200"
+      fill="url(#grad1)"
+      animate={{ cx: "70%", cy: "60%" }}
+      transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
+    />
+
+    <motion.circle
+      cx="70%"
+      cy="50%"
+      r="250"
+      fill="url(#grad1)"
+      animate={{ cx: "20%", cy: "70%" }}
+      transition={{ duration: 12, repeat: Infinity, repeatType: "reverse" }}
+    />
+  </svg>
+</div>
+
+
+      {/* HERO */}
+      <section className="flex flex-col items-center justify-center min-h-screen text-center px-6">
+        
         <motion.h1
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="text-5xl font-bold"
+          className="text-5xl md:text-6xl font-bold"
         >
           Track Live Locations
-          <br />
-          <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="block text-cyan-300">
             in Realtime
           </span>
         </motion.h1>
@@ -51,128 +86,93 @@ export default function Home() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-4 text-gray-300 max-w-lg"
+          transition={{ delay: 0.6 }}
+          className="mt-6 text-gray-300 max-w-2xl"
         >
-          Share your GPS location and see friends move live on a shared map
+          Share your GPS location and watch friends move live on a shared map — instantly.
         </motion.p>
 
-
-        <div className="mt-8 flex gap-3">
-          <input
-            placeholder="Enter your name"
-            className="px-4 py-2 rounded-xl text-black"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <button
-            onClick={openApp}
-            className="bg-cyan-500 hover:bg-cyan-400 px-6 py-2 rounded-xl font-semibold"
-          >
-            ⚡ Open App
-          </button>
-        </div>
-
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => window.location.href = MAP_APP_URL}
+          className="mt-10 px-8 py-3 bg-cyan-400 hover:bg-cyan-300 transition rounded-xl text-black font-semibold"
+        >
+          ⚡ Open App
+        </motion.button>
       </section>
 
-
-      {/* FEATURES SECTION */}
-      <SectionTitle title="Powerful" highlight="Features" />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto px-8 py-12">
-
-        <Feature icon="📡" title="Realtime Updates"
-                 text="Live GPS streaming via WebSockets — no refresh needed" />
-
-        <Feature icon="🎯" title="Unique Identity"
-                 text="Color-coded markers with usernames" />
-
-        <Feature icon="🟢" title="Online Status"
-                 text="Instantly see who joins or leaves" />
-
-        <Feature icon="📱" title="Works Everywhere"
-                 text="Mobile, desktop — any browser" />
-      </div>
-
-
-      {/* HOW IT WORKS */}
-      <SectionTitle title="How It" highlight="Works" />
-      <Steps />
-
-
-      {/* LAUNCH SECTION */}
-      <motion.div
-        whileHover={{ scale: 1.03 }}
-        className="max-w-lg mx-auto my-32 bg-[#0b132b] rounded-2xl p-10 text-center"
-      >
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          Realtime Tracker
+      {/* FEATURES */}
+      <section className="py-24 px-8 max-w-6xl mx-auto reveal">
+        <h2 className="text-center text-4xl font-bold mb-14">
+          Powerful <span className="text-cyan-300">Features</span>
         </h2>
 
-        <p className="text-gray-400 mt-2">
-          Ready to track live locations with friends?
-        </p>
+        <div className="grid md:grid-cols-2 gap-6">
+          {[
+            ["Realtime Updates","Instant GPS updates via WebSockets — no refresh needed"],
+            ["Unique Identity","Each user gets a color-coded marker and name"],
+            ["Online Status","See who’s online in realtime"],
+            ["Works Everywhere","Mobile, tablet, or desktop — just a browser"]
+          ].map(([title, desc], i) => (
+            <div key={i} className="bg-[#0b132b] p-6 rounded-2xl shadow-lg">
+              <p className="text-xl font-semibold">{title}</p>
+              <p className="text-gray-400 mt-2">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <button
-          onClick={openApp}
-          className="bg-cyan-500 hover:bg-cyan-400 mt-6 px-6 py-3 rounded-xl font-semibold"
-        >
-          Launch App ↗
-        </button>
-      </motion.div>
+      {/* SEE IT IN ACTION */}
+      <section className="py-24 px-8 max-w-5xl mx-auto text-center reveal">
+  <h2 className="text-4xl font-bold mb-10">
+    See It <span className="text-cyan-300">In Action</span>
+  </h2>
+
+  <p className="text-gray-400 mb-6">
+    Live realtime map preview — simulated demo 🚀
+  </p>
+
+  <MiniMapDemo />
+</section>
+
+
+
+      
+
+      {/* HOW IT WORKS */}
+      <section className="py-24 px-8 max-w-5xl mx-auto text-center reveal">
+        <h2 className="text-4xl font-bold mb-12">
+          How It <span className="text-cyan-300">Works</span>
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-10">
+          {[
+            ["Open App","Launch the realtime tracker"],
+            ["Allow Location","Grant GPS permission"],
+            ["Track Live","See everyone on the map"]
+          ].map(([title, text], i) => (
+            <div key={i} className="bg-[#0b132b] p-6 rounded-2xl shadow-lg">
+              <p className="text-xl font-semibold mb-2">{title}</p>
+              <p className="text-gray-400">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-24 px-8 text-center reveal">
+        <div className="bg-[#0b132b] inline-block px-10 py-8 rounded-2xl shadow-xl">
+          <h3 className="text-2xl font-bold mb-4">Ready to Track?</h3>
+          <button
+            onClick={() => window.location.href = MAP_APP_URL}
+            className="px-8 py-3 bg-cyan-400 hover:bg-cyan-300 rounded-xl text-black font-semibold"
+          >
+            Launch App 🚀
+          </button>
+        </div>
+      </section>
 
     </main>
-  );
-}
-
-function SectionTitle({ title, highlight }: any) {
-  return (
-    <h2 className="text-4xl font-bold text-center pt-20">
-      {title}{" "}
-      <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-        {highlight}
-      </span>
-    </h2>
-  );
-}
-
-function Feature({ icon, title, text }: any) {
-  return (
-    <motion.div
-      whileInView={{ opacity: 1, y: 0 }}
-      initial={{ opacity: 0, y: 40 }}
-      transition={{ duration: 0.5 }}
-      className="bg-[#0b132b] p-6 rounded-2xl"
-    >
-      <div className="text-3xl mb-3">{icon}</div>
-      <h3 className="font-bold text-xl">{title}</h3>
-      <p className="text-gray-400 mt-1">{text}</p>
-    </motion.div>
-  );
-}
-
-function Steps() {
-  return (
-    <div className="max-w-5xl mx-auto px-8 text-center py-20 grid grid-cols-1 md:grid-cols-3 gap-10">
-      <Step num="01" icon="👤" title="Enter Name" />
-      <Step num="02" icon="📍" title="Allow Location" />
-      <Step num="03" icon="🛰" title="Track Live" />
-    </div>
-  );
-}
-
-function Step({ num, icon, title }: any) {
-  return (
-    <motion.div
-      whileInView={{ opacity: 1, y: 0 }}
-      initial={{ opacity: 0, y: 40 }}
-      transition={{ duration: 0.5 }}
-      className="bg-[#0b132b] rounded-2xl p-6"
-    >
-      <div className="text-cyan-400 text-4xl font-bold">{num}</div>
-      <div className="text-5xl my-2">{icon}</div>
-      <div className="font-bold text-lg">{title}</div>
-    </motion.div>
   );
 }

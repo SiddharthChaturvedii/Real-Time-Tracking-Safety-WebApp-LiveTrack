@@ -1,26 +1,84 @@
+/* Load Tailwind */
 @import "tailwindcss";
 
+/* ========= THEME ROOT ========= */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #040816;
+  --foreground: #ffffff;
+
+  --font-sans: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  --font-mono: var(--font-geist-mono, monospace);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* Light Mode (fallback only) */
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #111111;
   }
 }
 
+/* ========= BASE ========= */
+html,
 body {
-  background: var(--background);
+  margin: 0;
+  padding: 0;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+
+  /* IMPORTANT — remove solid layer — allow gradient to show */
+  background: transparent;
+}
+
+/* Remove default layout padding */
+main {
+  padding: 0;
+}
+
+/* ========= FLOATING NEON BACKGROUND ========= */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0,255,255,.28), transparent 40%),
+    radial-gradient(circle at 80% 65%, rgba(255,0,255,.25), transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(0,200,255,.25), transparent 40%),
+    linear-gradient(180deg, #050b18 0%, #070d1a 60%, #020617 100%);
+
+  filter: blur(85px);
+  z-index: -2;
+  animation: floaty 16s ease-in-out infinite alternate;
+}
+
+/* Soft ambient motion */
+@keyframes floaty {
+  0%   { transform: translateY(-25px) translateX(-10px); }
+  100% { transform: translateY(25px) translateX(10px); }
+}
+
+/* ========= OPTIONAL GLASS EFFECT SECTIONS ========= */
+.glass {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px);
+  border-radius: 16px;
+}
+
+/* ========= SCROLLBAR ========= */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #3f7c7c; border-radius: 10px; }
+::-webkit-scrollbar-track { background: #aeb1be; }
+
+/* ========= ANIMATION HELPERS ========= */
+.reveal { opacity: 0; transform: translateY(30px); }
+
+/* Pulse tool — reusable */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: .25 }
+  50% { transform: scale(1.15); opacity: .4 }
+  100% { transform: scale(1); opacity: .25 }
 }
