@@ -1,54 +1,169 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Realtime Tracker</title>
+  <title>LiveTrack — Realtime GPS Parties</title>
 
   <link rel="stylesheet" href="/css/style.css">
 
   <link rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-.toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  background: #0f172a;
-  color: white;
-  padding: 12px 18px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.4);
-  opacity: 0;
-  transform: translateY(20px);
-  transition: .3s;
-  font-family: system-ui;
-  z-index: 9999;
-}
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-</style>
+
+  <style>
+
+    /* RESET MARGINS */
+    html, body{
+      margin:0;
+      padding:0;
+      height:100%;
+      overflow:hidden;
+      background:#020617;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto;
+    }
+
+    /* 🔥 TOP NAV */
+    #topbar{
+      height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 22px;
+      gap:18px;
+
+      background:#020617e8;
+      border-bottom:1px solid #1f2937;
+      backdrop-filter: blur(12px);
+
+      color:white;
+      position:fixed;
+      top:0; left:0; right:0;
+
+      z-index:5000;
+    }
+
+    /* LEFT GROUP */
+    .left{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+
+    #logo{
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:.3px;
+    }
+
+    .badge{
+      padding:6px 12px;
+      border-radius:10px;
+      font-size:14px;
+      font-weight:600;
+    }
+
+    .red{ background:#7f1d1d; }
+    .green{ background:#064e3b; }
+    .blue{ background:#1e3a8a; }
+
+    .codeBox{
+      background:#0b1220;
+      padding:6px 12px;
+      border-radius:10px;
+      opacity:.9;
+    }
+
+    /* BUTTONS */
+    .topbtn{
+      padding:8px 14px;
+      border-radius:11px;
+      border:1px solid #e5e7eb;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:600;
+      background:#f1f5f9;
+      transition:.2s;
+    }
+
+    .topbtn:hover{
+      background:white;
+      transform:translateY(-1px);
+    }
+
+    #sosBtn{
+      background:#dc2626;
+      color:white;
+      border:none;
+    }
+
+    #sosBtn:hover{
+      background:#ef4444;
+    }
+
+    /* MAP */
+    #map{
+      position:absolute;
+      top:64px;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:1;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: #0f172a;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.4);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: .3s;
+      z-index: 9999;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+  </style>
 
 </head>
 
 <body>
 
-  <div style="position:fixed; top:10px; left:10px; z-index:2000; 
-              background:#000000b5; padding:10px 14px; border-radius:10px;
-              color:white; font-family:sans-serif;">
-    <p><strong>Status:</strong> <span id="status">Not in party</span></p>
-    <p><strong>Party Code:</strong> <span id="code">—</span></p>
+  <!-- 🌟 TOP NAV -->
+  <div id="topbar">
 
-    <button onclick="createParty()">Create Party</button>
-    <button onclick="joinParty()">Join Party</button>
+    <div class="left">
+      <div id="logo">LiveTrack</div>
+
+      <div id="statusBadge" class="badge red">
+        Not in party
+      </div>
+
+      <div class="codeBox">
+        Code: <span id="code">—</span>
+      </div>
+
+      <button class="topbtn" onclick="createParty()">Create Party</button>
+      <button class="topbtn" onclick="joinParty()">Join Party</button>
+    </div>
+
+    <button id="sosBtn" class="topbtn">🚨 SOS</button>
+
   </div>
 
-  <div id="partyBox">
-      <b>Status:</b> <span id="status">Not in party</span><br>
-      <b>Party Code:</b> <span id="code">—</span>
-  </div>
 
+  <!-- MAP -->
   <div id="map"></div>
+
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/socket.io/socket.io.js"></script>
