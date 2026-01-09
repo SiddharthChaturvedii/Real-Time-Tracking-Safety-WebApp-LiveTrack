@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
 interface SidebarContextProps {
-  open: boolean;
   close: () => void;
 }
 
@@ -14,7 +13,9 @@ const SidebarContext = createContext<SidebarContextProps | null>(null);
 
 export function useSidebar() {
   const ctx = useContext(SidebarContext);
-  if (!ctx) throw new Error("useSidebar must be used inside Sidebar");
+  if (!ctx) {
+    throw new Error("useSidebar must be used inside <Sidebar />");
+  }
   return ctx;
 }
 
@@ -28,7 +29,7 @@ export function Sidebar({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarContext.Provider value={{ open, close: onClose }}>
+    <SidebarContext.Provider value={{ close: onClose }}>
       <AnimatePresence>
         {open && (
           <>
@@ -43,16 +44,17 @@ export function Sidebar({
 
             {/* SIDEBAR */}
             <motion.aside
-              className="fixed top-16 left-0 h-[calc(100vh-64px)] w-[260px] bg-neutral-900 z-50 shadow-xl"
+              className="fixed top-16 left-0 h-[calc(100vh-64px)] w-[260px] bg-neutral-900 z-50 shadow-2xl"
               initial={{ x: -260 }}
               animate={{ x: 0 }}
               exit={{ x: -260 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
             >
               {/* CLOSE BUTTON */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 text-neutral-400 hover:text-white"
+                className="absolute top-4 right-4 text-neutral-400 hover:text-white transition"
+                aria-label="Close sidebar"
               >
                 <X size={18} />
               </button>
@@ -98,9 +100,10 @@ export function SidebarItem({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
+        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
         danger
           ? "text-red-400 hover:bg-red-500/10"
           : "text-neutral-200 hover:bg-white/10"

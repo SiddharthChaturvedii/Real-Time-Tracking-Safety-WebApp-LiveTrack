@@ -5,119 +5,100 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { socket } from "@/lib/socket";
 
-interface LocationPayload {
-  id: string;
-  username: string;
-  latitude: number;
-  longitude: number;
-}
-
-const markers: Record<string, L.Marker> = {};
-let centered = false;
-
-function hashColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  const colors = ["red", "blue", "green", "gold", "violet", "orange"];
-  return colors[Math.abs(hash) % colors.length];
-}
-
-function getIcon(color: string) {
-  return L.icon({
-    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    shadowSize: [41, 41],
-  });
-}
-
 export default function LiveMap() {
   const mapRef = useRef<L.Map | null>(null);
+  const markers = useRef<Record<string, L.Marker>>({});
+  const centered = useRef(false);
 
   useEffect(() => {
     if (mapRef.current) return;
 
-    // 🗺 CREATE MAP
-    const map = L.map("map", { attributionControl: false }).setView([20, 0], 3);
-    mapRef.current = map;
+    // ---------- MAP INIT ----------
+    const map = L.map("map", {
+      center: [20, 0],
+      zoom: 3,
+      attributionControl: false,
+    });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
     }).addTo(map);
 
-    // 📍 GPS TRACKING
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition((pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
+    mapRef.current = map;
 
-        if (!centered) {
-          centered = true;
-          map.setView([lat, lng], 16);
-        }
+    // ---------- CUSTOM ICON (FIXES 404 ISSUE) ----------
+    const markerIcon = L.icon({
+      iconUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+      shadowUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      shadowSize: [41, 41],
+    });
 
-        drawMarker(socket.id!, "You", lat, lng);
+    // ---------- SELF LOCATION ----------
+    if (!navigator.geolocation) return;
 
-        socket.emit("send-location", {
-          latitude: lat,
-          longitude: lng,
-        });
-      });
-    }
+    navigator.geolocation.watchPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
 
-    // 🌍 RECEIVE OTHERS
-    socket.on("receive-location", (data: LocationPayload) => {
+      if (!centered.current) {
+        centered.current = true;
+        map.setView([latitude, longitude], 16);
+      }
+
+      drawMarker("self", "You", latitude, longitude);
+
+      if (socket.connected) {
+        socket.emit("send-location", { latitude, longitude });
+      }
+    });
+
+    // ---------- OTHER USERS ----------
+    socket.on("receive-location", (data: any) => {
+      if (!data?.id) return;
       drawMarker(data.id, data.username, data.latitude, data.longitude);
     });
 
     socket.on("user-disconnected", (id: string) => {
-      if (markers[id]) {
-        map.removeLayer(markers[id]);
-        delete markers[id];
+      if (markers.current[id]) {
+        map.removeLayer(markers.current[id]);
+        delete markers.current[id];
       }
     });
 
-    return () => {
-      socket.off("receive-location");
-      socket.off("user-disconnected");
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  return <div id="map" className="h-full w-full" />;
-}
-
-function drawMarker(
+    // ---------- MARKER DRAW ----------
+    function drawMarker(
   id: string,
   name: string,
   lat: number,
   lng: number
 ) {
-  const color = hashColor(id);
-  const jitter = id === socket.id ? 0 : (Math.random() - 0.5) * 0.00025;
+  if (!mapRef.current) return;
+
+  // 🔹 jitter for non-self markers
+  const jitter =
+    id === "self" ? 0 : (Math.random() - 0.5) * 0.0003;
 
   const finalLat = lat + jitter;
   const finalLng = lng + jitter;
 
-  if (!markers[id]) {
-    markers[id] = L.marker([finalLat, finalLng], {
-      icon: getIcon(color),
-    }).addTo(mapRefSafe());
-    markers[id].bindTooltip(
-      id === socket.id ? `You (${name})` : name
+  if (!markers.current[id]) {
+    markers.current[id] = L.marker(
+      [finalLat, finalLng],
+      { icon: markerIcon }
+    ).addTo(map);
+
+    markers.current[id].bindTooltip(
+      id === "self" ? "You" : name,
+      { permanent: false }
     );
   } else {
-    markers[id].setLatLng([finalLat, finalLng]);
+    markers.current[id].setLatLng([finalLat, finalLng]);
   }
 }
+}, []);
 
-function mapRefSafe(): L.Map {
-  const el = document.getElementById("map") as any;
-  return (el && (el as any)._leaflet_map) || (window as any)._leaflet_map;
+  return <div id="map" className="h-full w-full" />;
 }

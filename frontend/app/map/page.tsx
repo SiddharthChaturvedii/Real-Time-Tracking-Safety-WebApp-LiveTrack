@@ -1,11 +1,9 @@
 "use client";
 
-import { PartySidebar, Member } from "@/components/ui/party-sidebar";
-import io from "socket.io-client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { PartySidebar, Member } from "@/components/ui/party-sidebar";
 import { socket } from "@/lib/socket";
-
 
 const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
 
@@ -28,34 +26,47 @@ function hashColor(str: string) {
   return colors[Math.abs(hash) % colors.length];
 }
 
+function notify(msg: string) {
+  const t = document.createElement("div");
+  t.innerText = msg;
+  t.className =
+    "fixed bottom-6 right-6 bg-neutral-900 text-white px-4 py-2 rounded-xl shadow-lg z-[9999]";
+
+  document.body.appendChild(t);
+
+  setTimeout(() => {
+    t.style.opacity = "0";
+    setTimeout(() => t.remove(), 300);
+  }, 2500);
+}
+
+
 export default function MapPage() {
   const [partyCode, setPartyCode] = useState("");
   const [selfId, setSelfId] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [username, setUsername] = useState<string>("");
 
-  /* ---------------- USERNAME (RESTORED) ---------------- */
+  // 👤 USERNAME (RESTORED & FIXED)
   useEffect(() => {
-    if (!username) {
-      const name = prompt("Enter your name");
-      if (name) {
-        setUsername(name);
-        socket.emit("setUsername", name);
-      }
+    let name = sessionStorage.getItem("username");
+    if (!name) {
+      name = prompt("Enter your name") || "Guest";
+      sessionStorage.setItem("username", name);
     }
-  }, [username]);
+    socket.emit("register-user", name);
+  }, []);
 
-  /* ---------------- SOCKET EVENTS ---------------- */
+  // 🔌 SOCKET EVENTS
   useEffect(() => {
     socket.on("connect", () => {
-      setSelfId(socket.id);
+      setSelfId(socket.id || "");
     });
 
     socket.on("partyJoined", ({ partyCode, users }: PartyJoinedPayload) => {
       setPartyCode(partyCode);
       setMembers(
-        users.map(u => ({
+        users.map((u) => ({
           id: u.id,
           username: u.username,
           color: hashColor(u.id),
@@ -65,20 +76,23 @@ export default function MapPage() {
     });
 
     socket.on("userJoined", (user: PartyUser) => {
-      setMembers(prev => [
-        ...prev,
-        {
-          id: user.id,
-          username: user.username,
-          color: hashColor(user.id),
-          online: true,
-        },
-      ]);
+        notify(`🟢 ${user.username} joined the party`);
+        setMembers(prev => [
+            ...prev,
+            {
+                id: user.id,
+                username: user.username,
+                color: hashColor(user.id),
+                online: true,
+            },
+        ]);
     });
 
     socket.on("user-disconnected", (id: string) => {
-      setMembers(prev => prev.filter(u => u.id !== id));
+        setMembers(prev => prev.filter(u => u.id !== id));
+        notify("🔴 A user left the party");
     });
+
 
     return () => {
       socket.off("connect");
@@ -88,27 +102,25 @@ export default function MapPage() {
     };
   }, []);
 
-  /* ---------------- UI ---------------- */
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
 
-      {/* 🗺 MAP — ALWAYS FULLSCREEN */}
+      {/* 🗺 MAP */}
       <div className="absolute inset-0 z-0">
         <LiveMap />
       </div>
 
-      {/* 🧭 NAVBAR — GLOBAL ACTIONS */}
+      {/* 🧭 NAVBAR */}
       <div className="absolute top-0 left-0 right-0 h-16 z-40 bg-[#0b1220] text-white flex items-center px-4 gap-4">
 
-        {/* ☰ SIDEBAR TOGGLE */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="text-2xl leading-none"
+          className="text-2xl"
         >
           ☰
         </button>
 
-        <h1 className="font-extrabold text-lg">LiveTrack</h1>
+        <h1 className="font-extrabold">LiveTrack</h1>
 
         <span className="bg-red-700 px-3 py-1 rounded-md text-sm">
           {partyCode ? "In Party" : "Not in party"}
@@ -118,14 +130,13 @@ export default function MapPage() {
           Code: {partyCode || "—"}
         </span>
 
-        {/* 🟢 CREATE / JOIN — WORKING */}
         {!partyCode && (
           <>
             <button
               className="bg-white text-black px-3 py-1 rounded-md text-sm"
               onClick={() => {
-                if (!username) return alert("Enter name first");
-                socket.emit("createParty");
+                const name = sessionStorage.getItem("username") || "Guest";
+                socket.emit("createParty", name);
               }}
             >
               Create Party
@@ -134,9 +145,14 @@ export default function MapPage() {
             <button
               className="bg-white text-black px-3 py-1 rounded-md text-sm"
               onClick={() => {
-                if (!username) return alert("Enter name first");
                 const code = prompt("Enter party code");
-                if (code) socket.emit("joinParty", code);
+                const name = sessionStorage.getItem("username") || "Guest";
+                if (code) {
+                  socket.emit("joinParty", {
+                    partyCode: code.trim().toUpperCase(),
+                    username: name,
+                  });
+                }
               }}
             >
               Join Party
@@ -145,13 +161,13 @@ export default function MapPage() {
         )}
 
         <div className="ml-auto">
-          <button className="bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold">
+          <button className="bg-red-500 px-4 py-2 rounded-lg">
             🚨 SOS
           </button>
         </div>
       </div>
 
-      {/* 📦 SIDEBAR — PARTY INTERNALS ONLY */}
+      {/* 📦 SIDEBAR */}
       <PartySidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

@@ -27,34 +27,56 @@ export function PartySidebar({
 }) {
   return (
     <Sidebar open={open} onClose={onClose}>
+      {/* PARTY INFO */}
       <SidebarSection title="Party">
         <div className="text-white font-mono text-sm">
-          Code: {partyCode || "—"}
+          Code:{" "}
+          <span className="text-cyan-300">
+            {partyCode || "—"}
+          </span>
         </div>
       </SidebarSection>
 
+      {/* MEMBERS */}
       <SidebarSection title="Members">
-        <div className="flex flex-col gap-1">
-          {members.map(m => (
-            <div
-              key={m.id}
-              className="flex items-center gap-2 px-2 py-1 text-sm text-white"
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: m.color }}
-              />
-              <span>
-                {m.username}
-                {m.id === selfId && " (You)"}
-              </span>
-            </div>
-          ))}
-        </div>
+        {members.length === 0 ? (
+          <p className="text-sm text-neutral-400">
+            No members yet
+          </p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {members.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center gap-2 px-2 py-1 rounded-md text-sm text-white"
+              >
+                {/* ONLINE DOT */}
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: m.color }}
+                />
+
+                <span className="truncate">
+                  {m.username}
+                  {m.id === selfId && (
+                    <span className="text-neutral-400"> (You)</span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </SidebarSection>
 
-      <div className="mt-auto">
-        <SidebarItem danger onClick={onLeave}>
+      {/* ACTIONS */}
+      <div className="mt-auto pt-4">
+        <SidebarItem
+          danger
+          onClick={() => {
+            onClose();
+            onLeave();
+          }}
+        >
           <LogOut size={16} />
           Leave Party
         </SidebarItem>
