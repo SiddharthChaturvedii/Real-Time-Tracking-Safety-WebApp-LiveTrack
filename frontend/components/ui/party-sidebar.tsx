@@ -71,16 +71,20 @@ export function PartySidebar({
       {/* ACTIONS */}
       <div className="mt-auto pt-4">
         <SidebarItem
-          danger
-          onClick={() => {
-            onClose();
-            onLeave();
-          }}
-        >
-          <LogOut size={16} />
-          Leave Party
-        </SidebarItem>
-      </div>
+  danger
+  onClick={() => {
+    // 1️⃣ Tell backend to leave party
+    onLeave();
+
+    // 2️⃣ Close sidebar UI
+    onClose();
+  }}
+>
+  <LogOut size={16} />
+  Leave Party
+</SidebarItem>
+        </div>
     </Sidebar>
   );
 }
+

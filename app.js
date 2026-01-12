@@ -4,6 +4,8 @@ const http = require("http");
 const { v4: uuidv4 } = require("uuid");
 
 const server = http.createServer(app);
+let partySOS = {}; // partyCode -> socket.id
+
 
 const io = require("socket.io")(server, {
   cors: {
@@ -43,6 +45,8 @@ io.on("connection", (socket) => {
     });
   });
 
+
+
   socket.on("joinParty", ({ partyCode, username }) => {
     if (!parties[partyCode]) {
       socket.emit("partyError", "Party does not exist");
@@ -62,6 +66,25 @@ io.on("connection", (socket) => {
 
     socket.to(partyCode).emit("userJoined", user);
   });
+
+  socket.on("leaveParty", () => {
+  const code = userParty[socket.id];
+  if (!code || !parties[code]) return;
+
+  parties[code] = parties[code].filter(
+    u => u.id !== socket.id
+  );
+
+  socket.leave(code);
+  delete userParty[socket.id];
+
+  io.to(code).emit("user-disconnected", socket.id);
+
+  if (parties[code].length === 0) {
+    delete parties[code];
+  }
+});
+
 
   socket.on("send-location", (data) => {
     const code = userParty[socket.id];
@@ -83,10 +106,51 @@ io.on("connection", (socket) => {
       );
       io.to(code).emit("user-disconnected", socket.id);
       if (!parties[code].length) delete parties[code];
+
+      if (partySOS[code] === socket.id) {
+        delete partySOS[code];
+        io.to(code).emit("sosUpdate", { userId: null });
+}
+
     }
     delete users[socket.id];
     delete userParty[socket.id];
   });
+  // =============================
+// SOS SYSTEM
+// =============================
+    socket.on("sos", () => {
+      const code = userParty[socket.id];
+      if (!code) return;
+
+      io.to(code).emit("sos-alert", {
+        id: socket.id,
+        username: users[socket.id],
+        time: Date.now()
+      });
+    });
+
+    socket.on("sos-clear", () => {
+      const code = userParty[socket.id];
+      if (!code) return;
+
+      io.to(code).emit("sos-clear", socket.id);
+    });
+
+    socket.on("sos", () => {
+  const code = userParty[socket.id];
+  if (!code) return;
+
+  partySOS[code] = socket.id;
+
+  io.to(code).emit("sosUpdate", {
+    userId: socket.id,
+    username: users[socket.id],
+  });
+});
+
+
+
 });
 
 server.listen(3000, () =>
