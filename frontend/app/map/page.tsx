@@ -6,8 +6,6 @@ import dynamic from "next/dynamic";
 import { socket } from "@/lib/socket";
 
 const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
-const [sosUser, setSosUser] = useState<string | null>(null);
-
 
 interface PartyUser {
   id: string;
@@ -34,9 +32,9 @@ export default function MapPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
-  const [sosUser, setSosUser] = useState<string | null>(null); // 🚨
+  const [sosUser, setSosUser] = useState<string | null>(null); // 🚨 FIXED
 
-  // ---------------- NAME ----------------
+  /* ---------------- NAME ---------------- */
   useEffect(() => {
     let name = sessionStorage.getItem("username");
     if (!name) {
@@ -47,7 +45,7 @@ export default function MapPage() {
     socket.emit("register-user", name);
   }, []);
 
-  // ---------------- SOCKET ----------------
+  /* ---------------- SOCKET ---------------- */
   useEffect(() => {
     socket.on("connect", () => {
       setSelfId(socket.id || "");
@@ -81,13 +79,9 @@ export default function MapPage() {
       setMembers((prev) => prev.filter((u) => u.id !== id));
     });
 
-    socket.on("sos", (id: string) => {
-      setSosUser(id);
-
+    // 🚨 SOS handler (single source of truth)
     socket.on("sosUpdate", (data: { userId: string | null }) => {
       setSosUser(data.userId);
-});
-
     });
 
     return () => {
@@ -95,8 +89,7 @@ export default function MapPage() {
       socket.off("partyJoined");
       socket.off("userJoined");
       socket.off("user-disconnected");
-      socket.off("sos");
-      socket.off("sosUpdate")
+      socket.off("sosUpdate");
     };
   }, []);
 
@@ -152,12 +145,11 @@ export default function MapPage() {
 
         <div className="ml-auto">
           <button
-          onClick={() => socket.emit("sos")}
-          className="bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold animate-pulse"
-        >
-          🚨 SOS
-        </button>
-
+            onClick={() => socket.emit("sos")}
+            className="bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold animate-pulse"
+          >
+            🚨 SOS
+          </button>
         </div>
       </div>
 
@@ -168,7 +160,8 @@ export default function MapPage() {
         partyCode={partyCode}
         members={members}
         selfId={selfId}
-        onLeave={() => socket.disconnect()}
+        onLeave={() => socket.emit("leaveParty")}
+
       />
     </div>
   );

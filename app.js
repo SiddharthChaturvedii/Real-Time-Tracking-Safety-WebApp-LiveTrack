@@ -69,11 +69,9 @@ io.on("connection", (socket) => {
 
   socket.on("leaveParty", () => {
   const code = userParty[socket.id];
-  if (!code || !parties[code]) return;
+  if (!code) return;
 
-  parties[code] = parties[code].filter(
-    u => u.id !== socket.id
-  );
+  parties[code] = parties[code].filter(u => u.id !== socket.id);
 
   socket.leave(code);
   delete userParty[socket.id];
@@ -84,6 +82,7 @@ io.on("connection", (socket) => {
     delete parties[code];
   }
 });
+
 
 
   socket.on("send-location", (data) => {

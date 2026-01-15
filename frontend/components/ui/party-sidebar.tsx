@@ -2,6 +2,8 @@
 
 import { Sidebar, SidebarItem, SidebarSection } from "@/components/ui/sidebar";
 import { LogOut } from "lucide-react";
+import { socket } from "@/lib/socket";
+
 
 export interface Member {
   id: string;
@@ -71,15 +73,13 @@ export function PartySidebar({
       {/* ACTIONS */}
       <div className="mt-auto pt-4">
         <SidebarItem
-  danger
-  onClick={() => {
-    // 1️⃣ Tell backend to leave party
-    onLeave();
+            danger
+            onClick={() => {
+              socket.emit("leaveParty");
+              onClose();
+            }}
+          >
 
-    // 2️⃣ Close sidebar UI
-    onClose();
-  }}
->
   <LogOut size={16} />
   Leave Party
 </SidebarItem>
