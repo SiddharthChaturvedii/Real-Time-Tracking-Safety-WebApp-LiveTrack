@@ -32,7 +32,7 @@ export default function MapPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
-  const [sosUser, setSosUser] = useState<string | null>(null); // 🚨 FIXED
+  const [sosUser, setSosUser] = useState<string | null>(null);
 
   /* ---------------- NAME ---------------- */
   useEffect(() => {
@@ -79,7 +79,6 @@ export default function MapPage() {
       setMembers((prev) => prev.filter((u) => u.id !== id));
     });
 
-    // 🚨 SOS handler (single source of truth)
     socket.on("sosUpdate", (data: { userId: string | null }) => {
       setSosUser(data.userId);
     });
@@ -95,10 +94,9 @@ export default function MapPage() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-
       {/* 🗺 MAP */}
       <div className="absolute inset-0 z-0">
-        <LiveMap sosUser={sosUser} />
+        <LiveMap sosUser={sosUser} username={username || "Guest"} />
       </div>
 
       {/* 🧭 NAVBAR */}
@@ -161,7 +159,6 @@ export default function MapPage() {
         members={members}
         selfId={selfId}
         onLeave={() => socket.emit("leaveParty")}
-
       />
     </div>
   );
