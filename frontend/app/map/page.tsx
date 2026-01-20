@@ -21,7 +21,7 @@ export default function MapPage() {
   const [members, setMembers] = useState<PartyUser[]>([]);
   const [username, setUsername] = useState("");
 
-  /* ---------- USERNAME (CLIENT ONLY, SAFE) ---------- */
+  /* ---------- USERNAME ---------- */
   useEffect(() => {
     let name = sessionStorage.getItem("username");
     if (!name) {
@@ -32,35 +32,36 @@ export default function MapPage() {
     socket.emit("register-user", name);
   }, []);
 
-  /* ---------- SOCKET EVENTS ---------- */
+  /* ---------- SOCKET ---------- */
   useEffect(() => {
-    const onPartyJoined = ({ partyCode, users }: PartyJoinedPayload) => {
+    socket.on("partyJoined", ({ partyCode, users }: PartyJoinedPayload) => {
       setPartyCode(partyCode);
       setMembers(users);
-    };
+    });
 
-    const onUserJoined = (user: PartyUser) => {
-      setMembers((prev) => [...prev, user]);
-    };
+    socket.on("userJoined", (user: PartyUser) => {
+      setMembers((p) => [...p, user]);
+    });
 
-    const onUserDisconnected = (id: string) => {
-      setMembers((prev) => prev.filter((u) => u.id !== id));
-    };
+    socket.on("user-disconnected", (id: string) => {
+      setMembers((p) => p.filter((u) => u.id !== id));
+    });
 
-    socket.on("partyJoined", onPartyJoined);
-    socket.on("userJoined", onUserJoined);
-    socket.on("user-disconnected", onUserDisconnected);
+    socket.on("partyClosed", () => {
+      setPartyCode(null);
+      setMembers([]);
+    });
 
     return () => {
-      socket.off("partyJoined", onPartyJoined);
-      socket.off("userJoined", onUserJoined);
-      socket.off("user-disconnected", onUserDisconnected);
+      socket.off("partyJoined");
+      socket.off("userJoined");
+      socket.off("user-disconnected");
+      socket.off("partyClosed");
     };
   }, []);
 
   const inParty = Boolean(partyCode);
 
-  /* ---------- LEAVE (HARD RESET, NO GHOST STATE) ---------- */
   function leaveParty() {
     socket.emit("leaveParty");
     setPartyCode(null);
@@ -69,37 +70,31 @@ export default function MapPage() {
 
   return (
     <div className="h-screen w-screen bg-black text-white flex flex-col">
-      {/* 🧭 NAVBAR */}
-      <div className="h-14 flex-shrink-0 bg-black/70 backdrop-blur flex items-center px-4 gap-4 border-b border-white/10 z-10">
+      {/* NAVBAR */}
+      <div className="h-14 bg-black/80 flex items-center px-4 gap-4">
         <h1 className="font-semibold">LiveTrack</h1>
 
         <span className="text-xs px-2 py-1 rounded bg-green-600/20 text-green-400">
           {inParty ? "IN PARTY" : "NOT IN PARTY"}
         </span>
 
-        <span className="text-xs font-mono text-white/80">
-          {inParty ? `Code: ${partyCode}` : ""}
-        </span>
+        {inParty && (
+          <span className="text-xs font-mono">Code: {partyCode}</span>
+        )}
 
         {!inParty && (
           <>
-            <button
-              className="ml-4 bg-white text-black px-3 py-1 rounded text-sm"
-              onClick={() => socket.emit("createParty", username)}
-            >
+            <button onClick={() => socket.emit("createParty", username)}>
               Create
             </button>
-
             <button
-              className="bg-white text-black px-3 py-1 rounded text-sm"
               onClick={() => {
                 const code = prompt("Enter party code");
-                if (code) {
+                if (code)
                   socket.emit("joinParty", {
                     partyCode: code.trim().toUpperCase(),
                     username,
                   });
-                }
               }}
             >
               Join
@@ -108,18 +103,15 @@ export default function MapPage() {
         )}
 
         {inParty && (
-          <button
-            className="ml-auto bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
-            onClick={leaveParty}
-          >
+          <button className="ml-auto" onClick={leaveParty}>
             Leave
           </button>
         )}
       </div>
 
-      {/* 🗺 MAP — ALWAYS MOUNTED */}
+      {/* MAP ALWAYS ON */}
       <div className="flex-1 relative">
-        <LiveMap username={username} />
+        <LiveMap username={username} inParty={inParty} />
       </div>
     </div>
   );

@@ -7,10 +7,11 @@ const server = http.createServer(app);
 
 const io = require("socket.io")(server, {
   cors: {
-    origin: ["http://localhost:3001",
-             "http://localhost:3000",        
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://real-time-tracker-0qge.onrender.com",
     ],
-      
     methods: ["GET", "POST"],
   },
 });
@@ -30,33 +31,35 @@ function removeUserFromParty(socket) {
   const code = userParty[socket.id];
   if (!code || !parties[code]) return;
 
-  // remove user from party list
+  // 1️⃣ Remove user from party list
   parties[code] = parties[code].filter(u => u.id !== socket.id);
 
-  // notify others
-  io.to(code).emit("user-disconnected", socket.id);
-
-  // cleanup
+  // 2️⃣ Remove socket from room
   socket.leave(code);
+
+  // 3️⃣ Cleanup user mappings
   delete userParty[socket.id];
   delete userLocations[socket.id];
 
-  // delete party if empty
-  if (parties[code].length === 0) {
-    delete parties[code];
+  // 4️⃣ Notify remaining users
+  io.to(code).emit("user-disconnected", socket.id);
 
-  if (parties[code].length === 1) {
-    const remainingUser = parties[code][0];
-
+  // 5️⃣ DESTROY PARTY if <= 1 left
+  if (parties[code].length <= 1) {
+    // 🔒 Notify via ROOM (not individual IDs)
     io.to(code).emit("partyClosed");
 
-    delete userParty[remainingUser.id];
-    delete userLocations[remainingUser.id];
-    delete parties[code];
-}
+    // Cleanup remaining user mappings
+    parties[code].forEach(u => {
+      delete userParty[u.id];
+      delete userLocations[u.id];
+    });
 
+    // Finally delete party
+    delete parties[code];
   }
 }
+
 
 // =============================
 // SOCKET
@@ -96,16 +99,14 @@ io.on("connection", (socket) => {
 
     socket.join(partyCode);
 
-    // send party info
     socket.emit("partyJoined", {
       partyCode,
       users: parties[partyCode],
     });
 
-    // notify others
     socket.to(partyCode).emit("userJoined", user);
 
-    // 🔥 SEND EXISTING USERS' LOCATIONS TO NEW USER
+    // send existing locations
     parties[partyCode].forEach((u) => {
       if (userLocations[u.id]) {
         socket.emit("receive-location", {
@@ -120,24 +121,20 @@ io.on("connection", (socket) => {
 
   // ---------- LOCATION ----------
   socket.on("send-location", ({ latitude, longitude, username }) => {
-  const code = userParty[socket.id];
-  if (!code || !parties[code]) return;
+    const code = userParty[socket.id];
+    if (!code || !parties[code]) return;
 
-  // store latest location
-  userLocations[socket.id] = { latitude, longitude };
+    userLocations[socket.id] = { latitude, longitude };
 
-  // broadcast to everyone in party
-  io.to(code).emit("receive-location", {
-    id: socket.id,
-    username: username || users[socket.id],
-    latitude,
-    longitude,
+    io.to(code).emit("receive-location", {
+      id: socket.id,
+      username: username || users[socket.id],
+      latitude,
+      longitude,
+    });
   });
-});
 
-     
-
-  // ---------- LEAVE PARTY ----------
+  // ---------- LEAVE ----------
   socket.on("leaveParty", () => {
     removeUserFromParty(socket);
   });
