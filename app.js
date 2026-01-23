@@ -121,11 +121,13 @@ io.on("connection", (socket) => {
 
   // ---------- LOCATION ----------
   socket.on("send-location", ({ latitude, longitude, username }) => {
-    const code = userParty[socket.id];
-    if (!code || !parties[code]) return;
-
+    // ✅ ALWAYS store latest location
     userLocations[socket.id] = { latitude, longitude };
 
+    const code = userParty[socket.id];
+    if (!code || !parties[code]) return; // ⛔ no broadcast if not in party
+
+    // ✅ broadcast ONLY to party
     io.to(code).emit("receive-location", {
       id: socket.id,
       username: username || users[socket.id],
