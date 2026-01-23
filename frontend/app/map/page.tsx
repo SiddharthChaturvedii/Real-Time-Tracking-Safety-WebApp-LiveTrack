@@ -21,7 +21,6 @@ export default function MapPage() {
   const [members, setMembers] = useState<PartyUser[]>([]);
   const [username, setUsername] = useState("");
 
-  /* ---------- USERNAME ---------- */
   useEffect(() => {
     let name = sessionStorage.getItem("username");
     if (!name) {
@@ -32,7 +31,6 @@ export default function MapPage() {
     socket.emit("register-user", name);
   }, []);
 
-  /* ---------- SOCKET ---------- */
   useEffect(() => {
     socket.on("partyJoined", ({ partyCode, users }: PartyJoinedPayload) => {
       setPartyCode(partyCode);
@@ -40,11 +38,11 @@ export default function MapPage() {
     });
 
     socket.on("userJoined", (user: PartyUser) => {
-      setMembers((p) => [...p, user]);
+      setMembers((prev) => [...prev, user]);
     });
 
     socket.on("user-disconnected", (id: string) => {
-      setMembers((p) => p.filter((u) => u.id !== id));
+      setMembers((prev) => prev.filter((u) => u.id !== id));
     });
 
     socket.on("partyClosed", () => {
@@ -62,16 +60,10 @@ export default function MapPage() {
 
   const inParty = Boolean(partyCode);
 
-  function leaveParty() {
-    socket.emit("leaveParty");
-    setPartyCode(null);
-    setMembers([]);
-  }
-
   return (
     <div className="h-screen w-screen bg-black text-white flex flex-col">
       {/* NAVBAR */}
-      <div className="h-14 bg-black/80 flex items-center px-4 gap-4">
+      <div className="h-14 bg-black/70 backdrop-blur flex items-center px-4 gap-4 border-b border-white/10">
         <h1 className="font-semibold">LiveTrack</h1>
 
         <span className="text-xs px-2 py-1 rounded bg-green-600/20 text-green-400">
@@ -79,22 +71,30 @@ export default function MapPage() {
         </span>
 
         {inParty && (
-          <span className="text-xs font-mono">Code: {partyCode}</span>
+          <span className="text-xs font-mono text-white/80">
+            Code: {partyCode}
+          </span>
         )}
 
         {!inParty && (
           <>
-            <button onClick={() => socket.emit("createParty", username)}>
+            <button
+              className="ml-4 bg-white text-black px-3 py-1 rounded text-sm"
+              onClick={() => socket.emit("createParty", username)}
+            >
               Create
             </button>
+
             <button
+              className="bg-white text-black px-3 py-1 rounded text-sm"
               onClick={() => {
                 const code = prompt("Enter party code");
-                if (code)
+                if (code) {
                   socket.emit("joinParty", {
                     partyCode: code.trim().toUpperCase(),
                     username,
                   });
+                }
               }}
             >
               Join
@@ -103,15 +103,18 @@ export default function MapPage() {
         )}
 
         {inParty && (
-          <button className="ml-auto" onClick={leaveParty}>
+          <button
+            className="ml-auto bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+            onClick={() => socket.emit("leaveParty")}
+          >
             Leave
           </button>
         )}
       </div>
 
-      {/* MAP ALWAYS ON */}
+      {/* MAP */}
       <div className="flex-1 relative">
-        <LiveMap username={username} inParty={inParty} />
+        <LiveMap username={username} />
       </div>
     </div>
   );
