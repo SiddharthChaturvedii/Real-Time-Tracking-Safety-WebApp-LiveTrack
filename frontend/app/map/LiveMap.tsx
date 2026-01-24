@@ -5,8 +5,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { socket } from "@/lib/socket";
 
-/* ---------------- ICON CACHE ---------------- */
-
 const iconCache: Record<string, L.Icon> = {};
 
 interface LocationPayload {
@@ -39,32 +37,12 @@ function hashColor(id: string) {
   return colors[Math.abs(hash) % colors.length];
 }
 
-/* deterministic offset so markers don’t overlap */
-function jitterFor(id: string) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return ((hash % 100) - 50) * 0.000002;
-}
-
-interface LiveMapProps {
-  username: string;
-}
-
-export default function LiveMap({ username }: LiveMapProps) {
+export default function LiveMap({ username }: { username: string }) {
   const mapRef = useRef<L.Map | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
   const centeredRef = useRef(false);
-  const usernameRef = useRef(username);
 
-  /* keep latest username without rerunning map */
-  useEffect(() => {
-    usernameRef.current = username;
-  }, [username]);
-
-  /* ---------------- INIT MAP (ONCE) ---------------- */
   useEffect(() => {
     if (!mapElRef.current || mapRef.current) return;
 
@@ -79,55 +57,33 @@ export default function LiveMap({ username }: LiveMapProps) {
     }).addTo(map);
 
     mapRef.current = map;
-
     setTimeout(() => map.invalidateSize(), 200);
 
-    /* ---------------- GEOLOCATION (FINAL, SAFE) ---------------- */
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        if (!mapRef.current) return;
+    /* ---------- GPS ---------- */
+    const watchId = navigator.geolocation.watchPosition((pos) => {
+      if (!socket.id || !mapRef.current) return;
 
-        const { latitude, longitude } = pos.coords;
+      const { latitude, longitude } = pos.coords;
 
-        // 🔥 CENTER EXACTLY ONCE
-        if (!centeredRef.current) {
-          centeredRef.current = true;
-          mapRef.current.setView([latitude, longitude], 16);
-        }
-
-        // 🔥 ALWAYS SHOW SELF MARKER (EVEN WITHOUT SOCKET)
-        const selfId = socket.id ?? "__self__";
-
-        updateMarker(
-          selfId,
-          usernameRef.current,
-          latitude,
-          longitude
-        );
-
-        // 🔥 BROADCAST ONLY IF SOCKET IS CONNECTED
-        if (socket.connected) {
-          socket.emit("send-location", {
-            latitude,
-            longitude,
-            username: usernameRef.current,
-          });
-        }
-      },
-      (error) => {
-        console.error("❌ Geolocation error:", error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+      if (!centeredRef.current) {
+        centeredRef.current = true;
+        mapRef.current.setView([latitude, longitude], 16);
       }
-    );
 
-    /* ---------------- SOCKET EVENTS ---------------- */
+      // ✅ local self marker
+      updateMarker(socket.id, username, latitude, longitude);
 
+      // ✅ broadcast to party
+      socket.emit("send-location", {
+        latitude,
+        longitude,
+        username,
+      });
+    });
+
+    /* ---------- SOCKET ---------- */
     socket.on("receive-location", (data: LocationPayload) => {
-      // 🚫 ignore self echo
+      // 🔥 THIS IS THE FIX
       if (data.id === socket.id) return;
 
       updateMarker(
@@ -138,7 +94,6 @@ export default function LiveMap({ username }: LiveMapProps) {
       );
     });
 
-
     socket.on("user-disconnected", (id: string) => {
       const marker = markersRef.current[id];
       if (marker && mapRef.current) {
@@ -147,20 +102,16 @@ export default function LiveMap({ username }: LiveMapProps) {
       }
     });
 
-    /* ---------------- CLEANUP ---------------- */
     return () => {
       navigator.geolocation.clearWatch(watchId);
       socket.off("receive-location");
       socket.off("user-disconnected");
 
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      mapRef.current?.remove();
+      mapRef.current = null;
     };
-  }, []);
+  }, [username]);
 
-  /* ---------------- MARKER ENGINE ---------------- */
   function updateMarker(
     id: string,
     name: string,
@@ -169,33 +120,18 @@ export default function LiveMap({ username }: LiveMapProps) {
   ) {
     if (!mapRef.current) return;
 
-    const offset = jitterFor(id);
-    const finalLat = lat + offset;
-    const finalLng = lng + offset;
+    const icon = getIcon(hashColor(id));
+    const label = id === socket.id ? `You (${name})` : name;
 
-    const color = hashColor(id);
-    const icon = getIcon(color);
-    const label = id === "__self__" ? `You (${name})` : name;
-
-    const existing = markersRef.current[id];
-
-    if (!existing) {
-      markersRef.current[id] = L.marker(
-        [finalLat, finalLng],
-        { icon }
-      )
+    if (!markersRef.current[id]) {
+      markersRef.current[id] = L.marker([lat, lng], { icon })
         .addTo(mapRef.current)
-        .bindTooltip(label, { permanent: false });
+        .bindTooltip(label);
     } else {
-      existing.setLatLng([finalLat, finalLng]);
-      existing.setTooltipContent(label);
+      markersRef.current[id].setLatLng([lat, lng]);
+      markersRef.current[id].setTooltipContent(label);
     }
   }
 
-  return (
-    <div
-      ref={mapElRef}
-      className="absolute inset-0 h-full w-full"
-    />
-  );
+  return <div ref={mapElRef} className="absolute inset-0 h-full w-full" />;
 }
