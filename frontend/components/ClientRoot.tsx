@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import io from "socket.io-client";
 
 export default function ClientRoot() {
   useEffect(() => {
@@ -19,16 +18,6 @@ export default function ClientRoot() {
           "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
     });
-
-    // ----- Socket Fix -----
-    if (!(window as any).__livetrack_socket__) {
-      (window as any).__livetrack_socket__ = io("http://localhost:3000", {
-        transports: ["websocket"],
-        autoConnect: true,
-      });
-
-      console.log("🟢 LiveTrack socket initialized");
-    }
   }, []);
 
   return null;
