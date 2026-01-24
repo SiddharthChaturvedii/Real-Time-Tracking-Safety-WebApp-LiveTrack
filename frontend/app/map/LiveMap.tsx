@@ -127,6 +127,9 @@ export default function LiveMap({ username }: LiveMapProps) {
     /* ---------------- SOCKET EVENTS ---------------- */
 
     socket.on("receive-location", (data: LocationPayload) => {
+      // 🚫 ignore self echo
+      if (data.id === socket.id) return;
+
       updateMarker(
         data.id,
         data.username,
@@ -134,6 +137,7 @@ export default function LiveMap({ username }: LiveMapProps) {
         data.longitude
       );
     });
+
 
     socket.on("user-disconnected", (id: string) => {
       const marker = markersRef.current[id];
