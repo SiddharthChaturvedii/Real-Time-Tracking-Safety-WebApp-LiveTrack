@@ -101,10 +101,7 @@ body::before {
   border-radius: 16px;
 }
 
-/* ========= SCROLLBAR ========= */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: #3f7c7c; border-radius: 10px; }
-::-webkit-scrollbar-track { background: #aeb1be; }
+
 
 /* ========= ANIMATION HELPERS ========= */
 .reveal { opacity: 0; transform: translateY(30px); }

@@ -121,7 +121,6 @@ io.on("connection", (socket) => {
   });
 
   // ---------- LEAVE ----------
-  // ---------- LEAVE ----------
   socket.on("leaveParty", () => {
     logger.info(`[LEAVE] Socket ${socket.id} requested to leave party`);
     const result = partyManager.leaveParty(socket.id);
