@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { socket } from "@/lib/socket";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Menu, X, Users, LogOut, Copy, Trash2, Info, Phone, ShieldAlert, Heart, Siren, CheckCircle2, Navigation, AlertCircle } from "lucide-react";
+import { Menu, X, Users, LogOut, Copy, Trash2, Info, Phone, ShieldAlert, Heart, Siren, CheckCircle2, Navigation, AlertCircle, Moon, Sun } from "lucide-react";
 import { getHelplinesByLocation, Helpline } from "@/lib/helplines";
 
 const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
@@ -40,9 +40,11 @@ export default function MapPage() {
   const [sosUsers, setSosUsers] = useState<string[]>([]);
   const [waypoints, setWaypoints] = useState<Array<{ id: string, lat: number, lng: number, label: string }>>([]);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  // Theme State
+  const [mapTheme, setMapTheme] = useState<"bright" | "dark">("dark");
 
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const inSOS = sosUsers.includes(socket.id || "");
   const someoneInSOS = sosUsers.length > 0;
@@ -214,7 +216,7 @@ export default function MapPage() {
   const helplines = getHelplinesByLocation(userLocation?.lat, userLocation?.lng);
 
   return (
-    <div className="h-screen w-screen bg-black text-white flex flex-col relative overflow-hidden font-sans selection:bg-cyan-500/30">
+    <div className={`h-screen w-screen flex flex-col relative overflow-hidden font-sans selection:bg-cyan-500/30 transition-colors duration-500 ${mapTheme === 'dark' ? 'bg-black text-white' : 'bg-white/80 text-black'}`}>
 
       {/* TOAST CONTAINER */}
       <div className="absolute bottom-6 right-6 z-[2000] flex flex-col gap-3 pointer-events-none">
@@ -257,7 +259,8 @@ export default function MapPage() {
       </AnimatePresence>
 
       {/* NAVBAR / EMERGENCY HEADER */}
-      <div className={`h-16 flex items-center px-6 border-b transition-all duration-700 z-[1000] justify-between ${someoneInSOS ? 'bg-red-950/50 border-red-500/40 shadow-[0_0_50px_rgba(220,38,38,0.25)]' : 'bg-black/40 border-white/5'} backdrop-blur-3xl`}>
+      <div className={`h-16 flex items-center px-6 border-b transition-all duration-700 z-[1000] justify-between ${someoneInSOS ? 'bg-red-950/50 border-red-500/40 shadow-[0_0_50px_rgba(220,38,38,0.25)]' :
+        mapTheme === 'dark' ? 'bg-black/40 border-white/5' : 'bg-white/60 border-black/5'} backdrop-blur-3xl`}>
         <div className="flex items-center gap-4">
           <motion.button
             whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.15)" }}
@@ -271,7 +274,7 @@ export default function MapPage() {
           <div className="flex flex-col text-left">
             <motion.h1
               layout
-              className={`font-black text-xl sm:text-2xl tracking-tighter ${someoneInSOS ? 'text-white' : 'bg-gradient-to-br from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent'}`}
+              className={`font-black text-lg sm:text-2xl tracking-tighter ${someoneInSOS ? 'text-white' : 'bg-gradient-to-br from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent'}`}
             >
               {someoneInSOS ? "EMERGENCY" : "LiveTrack"}
             </motion.h1>
@@ -367,8 +370,8 @@ export default function MapPage() {
 
               <div className="flex items-center justify-between mb-10">
                 <div className="text-left">
-                  <h2 className="text-4xl font-black text-white flex items-center gap-4 tracking-tighter">
-                    <Siren className="text-red-500 w-10 h-10" /> ASSISTANCE
+                  <h2 className="text-2xl sm:text-4xl font-black text-white flex items-center gap-4 tracking-tighter">
+                    <Siren className="text-red-500 w-8 h-8 sm:w-10 sm:h-10" /> ASSISTANCE
                   </h2>
                   <p className="text-red-100/30 text-sm mt-2 font-black uppercase tracking-[0.2em] italic">Emergency Protocol Active</p>
                 </div>
@@ -395,7 +398,7 @@ export default function MapPage() {
                   >
                     <span className="text-5xl mb-4 filter drop-shadow-[0_4px_12px_rgba(220,38,38,0.4)]">{help.icon}</span>
                     <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.35em] mb-2">{help.label}</span>
-                    <span className="text-3xl font-black text-white tracking-[0.15em]">{help.number}</span>
+                    <span className="text-xl sm:text-3xl font-black text-white tracking-[0.15em]">{help.number}</span>
                     <Phone size={16} className="mt-4 text-red-500/50" />
                   </motion.a>
                 ))}
@@ -406,9 +409,9 @@ export default function MapPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleImSafe}
-                  className="mt-10 w-full py-6 bg-green-600 text-white rounded-[2rem] font-black text-2xl shadow-3xl shadow-green-900/50 border border-green-400/40 transition-all flex items-center justify-center gap-4 uppercase tracking-tighter"
+                  className="mt-6 sm:mt-10 w-full py-4 sm:py-6 bg-green-600 text-white rounded-[1.5rem] sm:rounded-[2rem] font-black text-lg sm:text-2xl shadow-3xl shadow-green-900/50 border border-green-400/40 transition-all flex items-center justify-center gap-4 uppercase tracking-tighter"
                 >
-                  <Heart size={28} className="animate-pulse" /> Confirm Safety
+                  <Heart size={24} className="animate-pulse" /> Confirm Safety
                 </motion.button>
               )}
             </motion.div>
@@ -516,6 +519,34 @@ export default function MapPage() {
                         ))}
                       </AnimatePresence>
                     </div>
+
+                    {/* THEME TOGGLE */}
+                    <div className="pt-6 border-t border-white/5">
+                      <motion.button
+                        whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.05)" }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setMapTheme(prev => prev === "dark" ? "bright" : "dark")}
+                        className="w-full flex items-center justify-between p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20">
+                            {mapTheme === "dark" ? <Moon size={20} /> : <Sun size={20} />}
+                          </div>
+                          <div className="flex flex-col text-left">
+                            <span className="text-sm font-black uppercase tracking-widest text-white/90">Map Theme</span>
+                            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+                              Current: {mapTheme.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full p-1 transition-colors ${mapTheme === "dark" ? 'bg-cyan-600' : 'bg-gray-600'}`}>
+                          <motion.div
+                            animate={{ x: mapTheme === "dark" ? 24 : 0 }}
+                            className="w-4 h-4 bg-white rounded-full shadow-sm"
+                          />
+                        </div>
+                      </motion.button>
+                    </div>
                   </LayoutGroup>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-32 opacity-20 text-center">
@@ -553,6 +584,7 @@ export default function MapPage() {
           sosUsers={sosUsers}
           waypoints={waypoints}
           addToast={addToast}
+          theme={mapTheme}
         />
       </div>
 

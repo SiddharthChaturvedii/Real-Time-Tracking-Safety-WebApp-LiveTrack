@@ -7,10 +7,10 @@
 /* ========= THEME ROOT ========= */
 :root {
 
-  --font-sans: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  --font-sans: var(--font-outfit, Arial, Helvetica, sans-serif);
   --font-mono: var(--font-geist-mono, monospace);
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: transparent;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -62,7 +62,7 @@ body {
   scroll-behavior: smooth;
 
   /* IMPORTANT — remove solid layer — allow gradient to show */
-  background: transparent;
+  background: transparent !important;
 }
 
 /* Remove default layout padding */
@@ -213,8 +213,7 @@ body::before {
 }
 
 .dark {
-
-  --background: oklch(0.145 0 0);
+  --background: transparent;
 
   --foreground: oklch(0.985 0 0);
 

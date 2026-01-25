@@ -50,15 +50,18 @@ export default function LiveMap({
   members,
   sosUsers = [],
   waypoints = [],
-  addToast
+  addToast,
+  theme = "dark"
 }: {
   username: string;
   members: Array<{ id: string; username: string }>;
   sosUsers?: string[];
   waypoints?: Array<{ id: string, lat: number, lng: number, label: string }>;
   addToast: (msg: string, type: 'info' | 'error' | 'success') => void;
+  theme?: "bright" | "dark";
 }) {
   const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
   const waypointsMarkersRef = useRef<Record<string, L.Marker>>({});
@@ -96,17 +99,6 @@ export default function LiveMap({
       attributionControl: false,
       zoomControl: false
     });
-
-    try {
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-      }).addTo(map);
-    } catch (e) {
-      console.warn("Failed to load map tiles, falling back to OSM", e);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-    }
 
     mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 200);
@@ -174,6 +166,29 @@ export default function LiveMap({
       mapRef.current = null;
     };
   }, [username]);
+
+  // ✅ DYNAMIC THEME SWAP
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (tileLayerRef.current) {
+      mapRef.current.removeLayer(tileLayerRef.current);
+    }
+
+    const url = theme === "dark"
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+    // Switch to standard HTTP if SSL is broken on user machine? 
+    // No, better to try a more reliable dark theme if Carto is failing.
+    // Using a different dark theme as requested "back to original" might mean OSM standard.
+
+    const options = theme === "dark"
+      ? { subdomains: 'abcd', attribution: '&copy; CARTO' }
+      : { attribution: '&copy; OpenStreetMap' };
+
+    tileLayerRef.current = L.tileLayer(url, options).addTo(mapRef.current);
+  }, [theme]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -356,7 +371,7 @@ export default function LiveMap({
         .waypoint-tooltip { background: rgba(255,215,0,0.2); border: 1px solid gold; color: gold; font-weight: 900; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
       `}</style>
-      <div ref={mapElRef} className="absolute inset-0 h-full w-full bg-[#0a0a0a]" />
+      <div ref={mapElRef} className={`absolute inset-0 h-full w-full transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0a0a0a]' : 'bg-[#f4f1ea]'}`} />
     </>
   );
 }

@@ -8,7 +8,6 @@ import MiniMapDemo from "../components/MiniMapDemo";
 import { GlowingEffect } from "../components/ui/glowing-effect";
 import Footerdemo from "../components/ui/footer-section";
 import { Switch } from "../components/ui/switch";
-import { Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -18,16 +17,6 @@ gsap.registerPlugin(ScrollTrigger);
 const MAP_APP_URL = "/map";
 
 export default function Home() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
   useEffect(() => {
     gsap.utils.toArray(".reveal").forEach((el: any) => {
       gsap.fromTo(
@@ -44,52 +33,28 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="transition-colors duration-700 bg-black text-white min-h-screen relative">
-      {/* Theme Toggle Top Left */}
-      <div className="fixed top-6 left-6 z-[1000] flex items-center gap-3 bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-xl transition-all hover:scale-105 group">
-        <Sun className={`h-4 w-4 transition-colors ${isDarkMode ? "text-white/30" : "text-yellow-400"}`} />
-        <Switch
-          id="global-dark-mode"
-          checked={isDarkMode}
-          onCheckedChange={setIsDarkMode}
-          className="data-[state=checked]:bg-cyan-600"
-        />
-        <Moon className={`h-4 w-4 transition-colors ${isDarkMode ? "text-cyan-400" : "text-white/30"}`} />
-      </div>
-
+    <main className="bg-[#050b18] text-white min-h-screen relative overflow-hidden">
       {/* Animated Background */}
-      <div className="fixed inset-0 -z-10 transition-opacity duration-700">
-        {!isDarkMode ? (
-          /* Bright Mode: Original Vibrant Dark Gradient */
-          <div className="w-full h-full relative overflow-hidden bg-[#050b18]">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#050b18] via-[#070d1a] to-[#020617]" />
-            <motion.div
-              animate={{
-                x: ["-10%", "10%"],
-                y: ["-10%", "10%"]
-              }}
-              transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
-              className="absolute top-[10%] left-[10%] w-[60%] h-[60%] bg-cyan-500/20 rounded-full blur-[120px]"
-            />
-            <motion.div
-              animate={{
-                x: ["10%", "-10%"],
-                y: ["10%", "-10%"]
-              }}
-              transition={{ duration: 25, repeat: Infinity, repeatType: "reverse" }}
-              className="absolute bottom-[10%] right-[10%] w-[60%] h-[60%] bg-purple-500/20 rounded-full blur-[120px]"
-            />
-          </div>
-        ) : (
-          /* Dark Mode: Pure Black with Minimalist Bubbles */
-          <div className="w-full h-full bg-black relative overflow-hidden">
-            <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-cyan-900/10 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] border border-white/5 rounded-full" />
-            <div className="absolute bottom-[20%] left-[10%] w-[20%] h-[20%] border border-white/5 rounded-full" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.03)_0%,transparent_70%)]" />
-          </div>
-        )}
+      <div className="fixed inset-0 -z-10">
+        <div className="w-full h-full relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050b18] via-[#070d1a] to-[#020617]" />
+          <motion.div
+            animate={{
+              x: ["-10%", "10%"],
+              y: ["-10%", "10%"]
+            }}
+            transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
+            className="absolute top-[10%] left-[10%] w-[60%] h-[60%] bg-cyan-500/20 rounded-full blur-[120px]"
+          />
+          <motion.div
+            animate={{
+              x: ["10%", "-10%"],
+              y: ["10%", "-10%"]
+            }}
+            transition={{ duration: 25, repeat: Infinity, repeatType: "reverse" }}
+            className="absolute bottom-[10%] right-[10%] w-[60%] h-[60%] bg-purple-500/20 rounded-full blur-[120px]"
+          />
+        </div>
       </div>
 
       {/* HERO */}
@@ -98,7 +63,7 @@ export default function Home() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="text-5xl md:text-6xl font-bold"
+          className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter"
         >
           Track Live Locations
           <span className="block text-cyan-300">in Realtime</span>
@@ -136,7 +101,7 @@ export default function Home() {
 
       {/* FEATURES */}
       <section className="py-24 px-8 max-w-6xl mx-auto reveal">
-        <h2 className="text-center text-4xl font-bold mb-14">
+        <h2 className="text-center text-3xl sm:text-4xl font-black tracking-tighter mb-14">
           Powerful <span className="text-cyan-300">Features</span>
         </h2>
 
@@ -167,10 +132,10 @@ export default function Home() {
               />
               <div className={cn(
                 "relative p-6 rounded-2xl h-full border transition-colors duration-500",
-                isDarkMode ? "bg-white/5 border-white/5" : "bg-black/5 border-black/5"
+                "bg-white/5 border-white/5"
               )}>
                 <p className="text-xl font-semibold tracking-tight">{title}</p>
-                <p className={cn("mt-2 text-sm", isDarkMode ? "text-gray-400" : "text-gray-600")}>{desc}</p>
+                <p className={cn("mt-2 text-sm", "text-gray-400")}>{desc}</p>
               </div>
             </div>
           ))}
@@ -179,7 +144,7 @@ export default function Home() {
 
       {/* DEMO */}
       <section className="py-24 px-8 max-w-5xl mx-auto text-center reveal">
-        <h2 className="text-4xl font-bold mb-10">
+        <h2 className="text-3xl sm:text-4xl font-black tracking-tighter mb-10">
           See It <span className="text-cyan-300">In Action</span>
         </h2>
 
@@ -202,7 +167,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Footerdemo isDarkMode={isDarkMode} />
+      <Footerdemo isDarkMode={true} />
     </main>
   );
 }
