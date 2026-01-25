@@ -27,7 +27,7 @@ interface Toast {
   type?: 'info' | 'error' | 'success';
 }
 
-const springConfig = { type: "spring", stiffness: 400, damping: 30 };
+const springConfig = { type: "spring" as const, stiffness: 400, damping: 30 };
 
 export default function MapPage() {
   const [partyCode, setPartyCode] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export default function MapPage() {
   const inSOS = sosUsers.includes(socket.id || "");
   const someoneInSOS = sosUsers.length > 0;
 
-  const addToast = (message: string, type: Toast['type'] = 'info') => {
+  const addToast = (message: string, type: Exclude<Toast['type'], undefined> = 'info') => {
     const id = Math.random().toString(36).substring(7);
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
