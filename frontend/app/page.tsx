@@ -10,6 +10,7 @@ import { Footerdemo } from "../components/ui/footer-section";
 import { Switch } from "../components/ui/switch";
 import { Moon, Sun } from "lucide-react";
 import { useState } from "react";
+import { cn } from "../lib/utils";
 
 gsap.registerPlugin(ScrollTrigger);
 
