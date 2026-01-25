@@ -73,51 +73,17 @@ export default function MapPage() {
     confirm("🚨 ACTIVATE SOS SIGNAL? \nThis will alert all party members.") && socket.emit("sos-signal");
   };
 
+  // Consolidated Socket Listeners
   useEffect(() => {
-    // ... existing interactions ...
-  }, []); // Only run once for setup
+    if (!username) return;
 
-  // SOS Listener
-  useEffect(() => {
-    socket.on("sos-alert", (senderName: string) => {
-      setIsSosActive(true);
-      addToast(`🚨 SOS: ${senderName} needs help!`);
-      playSiren();
-
-      // Auto-turn off visual red flash after 5s
-      setTimeout(() => setIsSosActive(false), 5000);
-    });
-
-    return () => {
-      socket.off("sos-alert");
-    };
-  }, []);
-
-  useEffect(() => {
-    let name = sessionStorage.getItem("username");
-    if (!name) {
-      name = prompt("Enter your name") || "Guest";
-      sessionStorage.setItem("username", name);
-    }
-    setUsername(name);
-    socket.emit("register-user", name);
-  }, []);
-
-  useEffect(() => {
+    // --- JOIN/CREATE ---
     socket.on("partyJoined", ({ partyCode, users, creator }: PartyJoinedPayload) => {
       setPartyCode(partyCode);
       setMembers(users);
-
-      // If we are strictly the joiner (not creator), creator check helps
-      // For the creator themselves, effectively they are the creator.
       const amICreator = creator === username;
       setIsCreator(amICreator);
-
-      if (!amICreator && creator) {
-        addToast(`Joined ${creator}'s party!`);
-      } else if (amICreator) {
-        addToast("Party created successfully!");
-      }
+      addToast(amICreator ? "Party created successfully!" : `Joined ${creator}'s party!`);
     });
 
     socket.on("userJoined", (user: PartyUser) => {
@@ -125,9 +91,8 @@ export default function MapPage() {
       addToast(`${user.username} joined the party`);
     });
 
+    // --- DISCONNECTS/KICKS ---
     socket.on("user-disconnected", (id: string) => {
-      // Find username for better toast? 
-      // We only have ID here unless we lookup in `members` before filtering
       setMembers((prev) => {
         const user = prev.find(u => u.id === id);
         if (user) addToast(`${user.username} left the party`);
@@ -137,14 +102,25 @@ export default function MapPage() {
 
     socket.on("partyClosed", () => {
       addToast("Party was closed by the host.");
-      setPartyCode(null);
-      setMembers([]);
-      setIsCreator(false);
-      setIsSidebarOpen(false);
+      resetPartyState();
     });
 
+    socket.on("partyLeft", () => {
+      addToast("You left the party.");
+      resetPartyState();
+    });
+
+    // --- SOS ---
+    socket.on("sos-alert", (senderName: string) => {
+      setIsSosActive(true);
+      addToast(`🚨 SOS: ${senderName} needs help!`);
+      playSiren();
+      setTimeout(() => setIsSosActive(false), 5000);
+    });
+
+    // --- ERRORS ---
     socket.on("partyError", (msg: string) => {
-      addToast(msg); // Removed blocking alert
+      addToast(msg);
     });
 
     return () => {
@@ -153,23 +129,27 @@ export default function MapPage() {
       socket.off("user-disconnected");
       socket.off("partyClosed");
       socket.off("partyLeft");
+      socket.off("sos-alert");
       socket.off("partyError");
     };
-  }, [username]); // depend on username for creator check logic
+  }, [username]);
 
-  // Add listener for successful leave
+  const resetPartyState = () => {
+    setPartyCode(null);
+    setMembers([]);
+    setIsCreator(false);
+    setIsSidebarOpen(false);
+    setIsSosActive(false);
+  };
+
   useEffect(() => {
-    socket.on("partyLeft", () => {
-      setPartyCode(null);
-      setMembers([]);
-      setIsCreator(false);
-      setIsSidebarOpen(false);
-      addToast("You left the party.");
-    });
-
-    return () => {
-      socket.off("partyLeft");
-    };
+    let name = sessionStorage.getItem("username");
+    if (!name) {
+      name = prompt("Enter your name") || "Guest";
+      sessionStorage.setItem("username", name);
+    }
+    setUsername(name);
+    socket.emit("register-user", name);
   }, []);
 
   const handleCreateParty = () => {
@@ -340,62 +320,67 @@ export default function MapPage() {
       </AnimatePresence>
 
       {/* NAVBAR */}
-      <div className="h-14 bg-black/70 backdrop-blur flex items-center px-4 gap-4 border-b border-white/10 z-[1000]">
+      <div className="h-14 bg-black/70 backdrop-blur flex items-center px-4 border-b border-white/10 z-[1000] justify-between">
 
-        {/* Hamburger Trigger */}
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 mr-2 hover:bg-white/10 rounded-lg transition-colors"
-        >
-          <Menu size={20} />
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <Menu size={20} />
+          </button>
 
-        <h1 className="font-semibold text-lg tracking-tight">
-          LiveTrack
-        </h1>
+          <h1 className="font-semibold text-base sm:text-lg tracking-tight">
+            LiveTrack
+          </h1>
 
-        <span className={`text-xs px-2 py-1 rounded bg-green-600/20 text-green-400 ${!inParty && 'opacity-0'}`}>
-          IN PARTY
-        </span>
+          <span className={`text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded bg-green-600/20 text-green-400 transition-opacity duration-300 ${!inParty ? 'opacity-0 invisible' : 'opacity-100 visible'}`}>
+            <span className="hidden xs:inline">IN PARTY</span>
+            <span className="xs:hidden">LIVE</span>
+          </span>
+        </div>
 
-        {inParty && (
-          <>
-            <span className="hidden md:inline-block text-xs font-mono text-white/60">
-              {partyCode}
-            </span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {inParty ? (
+            <>
+              <span className="hidden md:inline-block text-xs font-mono text-white/40 bg-white/5 px-2 py-1 rounded">
+                {partyCode}
+              </span>
 
-            {/* SOS BUTTON */}
-            <button
-              onClick={handleSOS}
-              className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.7)] transition flex items-center gap-2"
-            >
-              🚨 SOS
-            </button>
-          </>
-        )}
+              <button
+                onClick={handleSOS}
+                className="bg-red-600 hover:bg-red-700 text-white px-2.5 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.5)] transition flex items-center gap-1.5 sm:gap-2 border border-red-500/30 whitespace-nowrap"
+              >
+                🚨 <span className="hidden sm:inline">SOS</span><span className="sm:hidden text-[10px]">ALERT</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="bg-white text-black px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-100 transition shadow-lg"
+                onClick={handleCreateParty}
+              >
+                Create
+              </button>
 
-        {!inParty && (
-          <div className="ml-auto flex gap-3">
-            <button
-              className="bg-white text-black px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
-              onClick={handleCreateParty}
-            >
-              Create
-            </button>
-
-            <button
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition border border-white/10"
-              onClick={handleJoinParty}
-            >
-              Join
-            </button>
-          </div>
-        )}
+              <button
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition border border-white/10"
+                onClick={handleJoinParty}
+              >
+                Join
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* MAP */}
       <div className="flex-1 relative z-0">
-        <LiveMap username={username} />
+        <LiveMap
+          key={partyCode || "standalone"}
+          username={username}
+          members={members}
+        />
       </div>
     </div>
   );

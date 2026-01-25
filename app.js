@@ -125,10 +125,10 @@ io.on("connection", (socket) => {
 
     if (partyCode) {
       // Broadcast to EVERYONE in party (including sender - helpful for debugging, though frontend ignores self)
-      // Using io.to ensures it hits all sockets in the room 100%
+      // Note: We use partyManager.getUser(socket.id) to prevent client-side name spoofing
       io.to(partyCode).emit("receive-location", {
         id: socket.id,
-        username: username || partyManager.getUser(socket.id),
+        username: partyManager.getUser(socket.id),
         latitude,
         longitude,
       });

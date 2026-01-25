@@ -29,14 +29,21 @@ class PartyManager {
             this.leaveParty(socketId);
         }
 
-        const partyCode = uuidv4().slice(0, 6).toUpperCase();
+        // --- UNIQUE CODE GENERATION ---
+        let partyCode;
+        let attempts = 0;
+        do {
+            partyCode = uuidv4().slice(0, 6).toUpperCase();
+            attempts++;
+        } while (this.parties[partyCode] && attempts < 10);
+
         this.parties[partyCode] = {
             creator: username, // Store creator name for notifications
             members: [{ id: socketId, username }]
         };
         this.userParty[socketId] = partyCode;
 
-        logger.info(`User ${username} (${socketId}) created party ${partyCode}`);
+        logger.info(`User ${username} (${socketId}) created party ${partyCode} (attempts: ${attempts})`);
         return {
             partyCode,
             users: this.parties[partyCode].members,
@@ -53,6 +60,12 @@ class PartyManager {
 
         const party = this.parties[partyCode];
         if (!party) return { error: "Party does not exist" };
+
+        // --- PREVENT NAME SPOOFING/DUPLICATION ---
+        const isNameTaken = party.members.some(u =>
+            u.username.toLowerCase() === username.toLowerCase()
+        );
+        if (isNameTaken) return { error: "Username already taken in this party" };
 
         const user = { id: socketId, username };
         party.members.push(user);

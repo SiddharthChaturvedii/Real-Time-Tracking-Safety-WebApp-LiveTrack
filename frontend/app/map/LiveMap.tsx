@@ -37,7 +37,13 @@ function hashColor(id: string) {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export default function LiveMap({ username }: { username: string }) {
+export default function LiveMap({
+  username,
+  members
+}: {
+  username: string;
+  members: Array<{ id: string; username: string }>;
+}) {
   const mapRef = useRef<L.Map | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
@@ -60,25 +66,30 @@ export default function LiveMap({ username }: { username: string }) {
     setTimeout(() => map.invalidateSize(), 200);
 
     /* ---------- GPS ---------- */
+    let lastEmitTime = 0;
     const watchId = navigator.geolocation.watchPosition((pos) => {
       if (!socket.id || !mapRef.current) return;
 
       const { latitude, longitude } = pos.coords;
+      const now = Date.now();
 
       if (!centeredRef.current) {
         centeredRef.current = true;
         mapRef.current.setView([latitude, longitude], 16);
       }
 
-      // ✅ local self marker
+      // ✅ local self marker (always update UI instantly)
       updateMarker(socket.id, username, latitude, longitude);
 
-      // ✅ broadcast to party
-      socket.emit("send-location", {
-        latitude,
-        longitude,
-        username,
-      });
+      // ✅ broadcast to party (Throttled to 2 seconds)
+      if (now - lastEmitTime > 2000) {
+        lastEmitTime = now;
+        socket.emit("send-location", {
+          latitude,
+          longitude,
+          username,
+        });
+      }
     });
 
     /* ---------- SOCKET ---------- */
@@ -111,6 +122,24 @@ export default function LiveMap({ username }: { username: string }) {
       mapRef.current = null;
     };
   }, [username]);
+
+  // ✅ RECONCILIATION: Sync markers with the members list
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const currentMemberIds = new Set(members.map(m => m.id));
+    // Add our own ID to the set so we don't delete our own marker
+    if (socket.id) currentMemberIds.add(socket.id);
+
+    Object.keys(markersRef.current).forEach(id => {
+      if (!currentMemberIds.has(id)) {
+        const marker = markersRef.current[id];
+        mapRef.current!.removeLayer(marker);
+        delete markersRef.current[id];
+        console.log(`[MAP] Removed stale marker for ${id}`);
+      }
+    });
+  }, [members]);
 
   function updateMarker(
     id: string,

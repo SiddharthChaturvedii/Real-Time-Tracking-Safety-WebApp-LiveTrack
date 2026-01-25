@@ -6,6 +6,7 @@ import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import MiniMapDemo from "../components/MiniMapDemo";
 import { GlowingEffect } from "../components/ui/glowing-effect";
+import { Footerdemo } from "../components/ui/footer-section";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -171,28 +172,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="py-24 px-8 text-center reveal">
-        <div className="relative inline-block p-[1px] rounded-2xl">
-          <GlowingEffect
-            spread={40}
-            glow={true}
-            disabled={false}
-            proximity={64}
-            inactiveZone={0.01}
-            borderWidth={2}
-          />
-          <div className="relative bg-[#0b132b] px-10 py-8 rounded-2xl shadow-xl border border-white/5">
-            <h3 className="text-2xl font-bold mb-4">Ready to Track?</h3>
-            <button
-              onClick={() => (window.location.href = MAP_APP_URL)}
-              className="px-8 py-3 bg-cyan-400 hover:bg-cyan-300 rounded-xl text-black font-semibold transition-colors"
-            >
-              Launch App 🚀
-            </button>
-          </div>
-        </div>
-      </section>
+      <Footerdemo />
     </main>
   );
 }
