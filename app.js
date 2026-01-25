@@ -170,6 +170,15 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ---------- SOS ----------
+  socket.on("sos-signal", () => {
+    const code = userParty[socket.id];
+    if (code) {
+      logger.info(`🚨 SOS SIGNAL from ${users[socket.id]} in party ${code}`);
+      io.to(code).emit("sos-alert", users[socket.id]);
+    }
+  });
+
   // ---------- DISCONNECT ----------
   socket.on("disconnect", () => {
     logger.info(`[DISCONNECT] Socket disconnected: ${socket.id}`);

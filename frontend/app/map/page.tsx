@@ -34,6 +34,8 @@ export default function MapPage() {
 
   // Toast State
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // SOS State
+  const [isSosActive, setIsSosActive] = useState(false);
 
   const addToast = (message: string) => {
     const id = Math.random().toString(36).substring(7);
@@ -42,6 +44,54 @@ export default function MapPage() {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 4000);
   };
+
+  // --- SOS AUDIO HELPER ---
+  const playSiren = () => {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.5);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 1.0);
+
+    // Repeat for 3 seconds
+    osc.start();
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3);
+    osc.stop(ctx.currentTime + 3);
+  };
+
+  const handleSOS = () => {
+    if (!inParty) return;
+    confirm("🚨 ACTIVATE SOS SIGNAL? \nThis will alert all party members.") && socket.emit("sos-signal");
+  };
+
+  useEffect(() => {
+    // ... existing interactions ...
+  }, []); // Only run once for setup
+
+  // SOS Listener
+  useEffect(() => {
+    socket.on("sos-alert", (senderName: string) => {
+      setIsSosActive(true);
+      addToast(`🚨 SOS: ${senderName} needs help!`);
+      playSiren();
+
+      // Auto-turn off visual red flash after 5s
+      setTimeout(() => setIsSosActive(false), 5000);
+    });
+
+    return () => {
+      socket.off("sos-alert");
+    };
+  }, []);
 
   useEffect(() => {
     let name = sessionStorage.getItem("username");
@@ -94,7 +144,7 @@ export default function MapPage() {
     });
 
     socket.on("partyError", (msg: string) => {
-      alert(msg); // Or use toast
+      addToast(msg); // Removed blocking alert
     });
 
     return () => {
@@ -277,6 +327,18 @@ export default function MapPage() {
         )}
       </AnimatePresence>
 
+      {/* SOS RED FLASH OVERLAY */}
+      <AnimatePresence>
+        {isSosActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[9999] bg-red-600 pointer-events-none animate-pulse"
+          />
+        )}
+      </AnimatePresence>
+
       {/* NAVBAR */}
       <div className="h-14 bg-black/70 backdrop-blur flex items-center px-4 gap-4 border-b border-white/10 z-[1000]">
 
@@ -297,9 +359,19 @@ export default function MapPage() {
         </span>
 
         {inParty && (
-          <span className="hidden md:inline-block text-xs font-mono text-white/60">
-            {partyCode}
-          </span>
+          <>
+            <span className="hidden md:inline-block text-xs font-mono text-white/60">
+              {partyCode}
+            </span>
+
+            {/* SOS BUTTON */}
+            <button
+              onClick={handleSOS}
+              className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.7)] transition flex items-center gap-2"
+            >
+              🚨 SOS
+            </button>
+          </>
         )}
 
         {!inParty && (
