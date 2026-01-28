@@ -29,29 +29,42 @@
 - **Backend:** [Node.js](https://nodejs.org/), [Express.js](https://expressjs.com/), [Socket.io](https://socket.io/)
 - **State Management:** Custom Server-side `PartyManager` logic
 ---
-## 🚀 Getting Started
-### Prerequisites
-- Node.js (v18+)
-- npm or yarn
-### Installation
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/SiddharthChaturvedii/Real-Time-Tracker.git
-   cd Real-Time-Tracker
-Setup Backend:
+🚀 Getting Started
+📋 Prerequisites
+
+Node.js (v18+)
+
+npm or yarn
+
+🔧 Backend Setup
+
+Install dependencies:
 
 npm install
-# Start the server (runs on port 3000)
+
+
+Start the server (runs on port 3000):
+
 node app.js
-Setup Frontend:
+
+🎨 Frontend Setup
+
+Navigate to the frontend directory and install dependencies:
 
 cd frontend
 npm install
-# Run development server
+
+
+Run the development server:
+
 npm run dev
-Environment Variables: Create a .env.local in the frontend directory:
+
+🌱 Environment Variables
+
+Create a .env.local file inside the frontend/ directory:
 
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
+
 📂 Project Structure
 ├── app.js               # Express server & Socket.io logic
 ├── managers/            # Server-side state (PartyManager)
@@ -60,14 +73,11 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
     ├── app/             # Application routes & layout
     ├── components/      # UI & Mapping components
     └── lib/             # API & Socket client utilities
+
 🤝 Contributing
-Contributions are welcome! If you have a feature request or bug report, please open an issue or submit a pull request.
 
-📜 License
-This project is licensed under the 
+Contributions are welcome!
+If you have a feature request, improvement idea, or bug report, please open an issue or submit a pull request.
 
-ISC License
-.
 
 Built with ❤️ for a safer, more connected world.
-
