@@ -41,10 +41,10 @@ export default function Home() {
         <CurvedLoop
           marqueeText="Real✦ Time ✦ Tracking ✦ For ✦ the ✦ people ✦ who ✦ matter ✦ the ✦ most"
           speed={1.5}
-          curveAmount={330}
+          curveAmount={180}
           direction="right"
           interactive={true}
-          className="drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]"
+          className="drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
         />
       </div>
 
