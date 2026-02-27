@@ -56,24 +56,6 @@ export default function Home() {
           instantly.
         </motion.p>
 
-        <div className="relative mt-10 rounded-xl p-[1px]">
-          <GlowingEffect
-            spread={40}
-            glow={true}
-            disabled={false}
-            proximity={64}
-            inactiveZone={0.01}
-            borderWidth={2}
-          />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => (window.location.href = MAP_APP_URL)}
-            className="relative px-8 py-3 bg-cyan-400 hover:bg-cyan-300 transition rounded-xl text-black font-semibold"
-          >
-            ⚡ Open App
-          </motion.button>
-        </div>
       </section>
 
       {/* FEATURES */}
@@ -141,6 +123,38 @@ export default function Home() {
           <div className="relative rounded-[18px] overflow-hidden border border-white/10">
             <MiniMapDemo />
           </div>
+        </div>
+      </section>
+
+      {/* CTA SECTION */}
+      <section className="py-32 px-8 flex flex-col items-center justify-center text-center reveal relative isolate">
+        <div className="absolute inset-0 bg-cyan-500/5 blur-[120px] -z-10 rounded-full w-3/4 h-3/4 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+        <h2 className="text-4xl sm:text-5xl font-black tracking-tighter mb-6">
+          Ready to Start <span className="text-cyan-300">Tracking?</span>
+        </h2>
+
+        <p className="text-gray-400 max-w-xl mb-12 text-lg">
+          Join users around the world sharing their live locations securely and effortlessly. Try it instantly in your browser.
+        </p>
+
+        <div className="relative rounded-2xl p-[1px]">
+          <GlowingEffect
+            spread={60}
+            glow={true}
+            disabled={false}
+            proximity={80}
+            inactiveZone={0.01}
+            borderWidth={2}
+          />
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: "0 0 50px rgba(34,211,238,0.5)" }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => (window.location.href = MAP_APP_URL)}
+            className="relative px-10 py-5 text-lg sm:text-xl bg-cyan-400 hover:bg-cyan-300 transition rounded-2xl text-black font-black uppercase tracking-widest shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+          >
+            ⚡ Launch LiveTrack
+          </motion.button>
         </div>
       </section>
 
