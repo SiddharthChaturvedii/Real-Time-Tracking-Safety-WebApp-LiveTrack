@@ -10,6 +10,7 @@ import Footerdemo from "../components/ui/footer-section";
 import { Switch } from "../components/ui/switch";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import CurvedLoop from "../components/CurvedLoop";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -34,8 +35,21 @@ export default function Home() {
 
   return (
     <main className="text-white min-h-screen relative overflow-hidden">
+
+      {/* TOP BANNER / CURVED LOOP */}
+      <div className="w-full pt-10 sm:pt-20 opacity-80 hover:opacity-100 transition-opacity duration-1000 z-10 relative pointer-events-none sm:pointer-events-auto">
+        <CurvedLoop
+          marqueeText="Real✦ Time ✦ Tracking ✦ For ✦ the ✦ people ✦ who ✦ matter ✦ the ✦ most"
+          speed={1.5}
+          curveAmount={330}
+          direction="right"
+          interactive={true}
+          className="drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]"
+        />
+      </div>
+
       {/* HERO */}
-      <section className="flex flex-col items-center justify-center min-h-screen text-center px-6">
+      <section className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6 relative z-20 -mt-20 sm:-mt-32">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
